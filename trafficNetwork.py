@@ -75,7 +75,11 @@ def genStreetNet(Edgelist):
     # node label & number
     node_list = np.unique(Edgelist['Node_Start'])
     # network generating
+<<<<<<< HEAD
     G = nx.MultiDiGraph()
+=======
+    G = nx.DiGraph()
+>>>>>>> a5610ff12b1986ff30453251217e91989198d372
     # add nodes
     G.add_nodes_from(node_list)
     # add edges
