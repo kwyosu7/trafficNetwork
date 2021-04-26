@@ -11,7 +11,7 @@ class correlated_network:
         self.size = size
         
         # lattice
-        self.G = nx.grid_2d_graph(self.size,self.size)
+        self.G = nx.grid_2d_graph(self.size,self.size, periodic=True)
         Node = np.array(self.G.nodes)
         pos={tuple(Node[i]):[Node[i,0],Node[i,1]]for i in range(len(Node))}
         # uniform weight
