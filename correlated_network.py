@@ -7,80 +7,95 @@ def cluster_distribution(network):
     return [len(c) for c in sorted(nx.connected_components(network), key=len, reverse=True)]
 
 class correlated_network:
-    def __init__(self, size):
+    def __init__(self, size, Periodic=True):
         self.size = size
         
         # lattice
-        self.G = nx.grid_2d_graph(self.size,self.size, periodic=True)
-        Node = np.array(self.G.nodes)
-        pos={tuple(Node[i]):[Node[i,0],Node[i,1]]for i in range(len(Node))}
-        # uniform weight
-        for u,v in list (self.G.edges):
-            self.G[u][v]['weight'] = random.random()
-        
-        self.edge = list(self.G.edges(data='weight'))
-        
-    # 2-d lattice Network 생성
-    def reconstruct_lattice_by_original_weight(self):
-        self.G = nx.grid_2d_graph(self.size,self.size)
-        Node = np.array(self.G.nodes)
-        pos={tuple(Node[i]):[Node[i,0],Node[i,1]]for i in range(len(Node))}
-        for e in self.edge:
-            self.G.edges[e[0], e[1]]['weight']=e[2]
+        self.lattice = nx.grid_2d_graph(self.size, self.size, periodic=Periodic)
+        self.Nodes = list(self.lattice.nodes)
+        self.pos={tuple(self.Nodes[i]):[self.Nodes[i][0],self.Nodes[i][1]]for i in range(len(self.Nodes))}
+        self.Edges = list(self.lattice.edges())
+            
+        self.edge_list_weight = self.edge_list_weight_gen()
+        self.edge_neighbor = self.edge_neighbor_gen()
     
-    # check neighbor link
-    def neighbor_link(self, link):
+    def edge_align(self, edge_list):
         """
-        link : (u, v, weight)
+        my link rule (small, large)
+        
+        input : link 'list'
+        return : link 'list'
         
         """
-        neighbor = list(self.G.edges(link[0], data = 'weight'))\
-                    + list(self.G.edges(link[1], data = 'weight'))
-        # 자기 자신 두번 불러지므로 제거
-        neighbor.remove(link)
-        neighbor.remove((link[1], link[0], link[2]))
-        return neighbor
+        new_edge_list = []
+        for e in edge_list:
+            n1, n2 = e[0], e[1]
+            if n1[0] > n2[0]: new_e = (e[1], e[0])
+            elif n1[0] == n2[0]:
+                if n1[1] > n2[1]:new_e = (e[1], e[0])
+                else: new_e = e
+            else: new_e = e
+            new_edge_list.append(new_e)
+        return new_edge_list
     
-    def get_neighbor_weight_mean(self, link):
-        neighbor_mean = 0
-        n_link = self.neighbor_link(link)
-        for i in n_link:
-            neighbor_mean+=i[2]
-        return link[2], neighbor_mean/len(n_link)
+    def edge_list_weight_gen(self):
+        """
+        return edge, weight array (uniform distribution)
+        """
+        edge_list_weight, w_list, c = {}, np.random.uniform(0,1,len(self.Edges)), 0
+        for e in self.Edges:
+            u = e[0]
+            v = e[1]
+            edge_list_weight[(u,v)] = w_list[c] 
+            c+=1
+        return edge_list_weight
     
-    def link_weight_distance(self, edge_ij, edge_mn, shuffle=False):
+    def edge_neighbor_gen(self):
+        """
+        return edge neighbor list
+        """
+        edge_neighbor = {}
+        for e in self.Edges:
+            node_i_links = list(self.lattice.edges(e[0]))
+            node_j_links = list(self.lattice.edges(e[1]))
+            neighbors = self.edge_align(node_i_links + node_j_links)
+            for i in range(2):neighbors.remove(e)
+            edge_neighbor[e]=neighbors
+        return edge_neighbor
+    
+    def case_shuffle_weight(self, e_ij, e_mn, shuffle = False):
         if shuffle:
-            w_mn, w_ij_neighbor = self.get_neighbor_weight_mean(edge_ij)
-            w_ij, w_mn_neighbor = self.get_neighbor_weight_mean(edge_mn)
+            w_mn, w_ij_neigh = self.edge_list_weight[e_ij], self.neighbor_weight_mean(e_ij)
+            w_ij, w_mn_neigh = self.edge_list_weight[e_mn], self.neighbor_weight_mean(e_mn)
         else:
-            w_ij, w_ij_neighbor = self.get_neighbor_weight_mean(edge_ij)
-            w_mn, w_mn_neighbor = self.get_neighbor_weight_mean(edge_mn)
-        return ((w_ij - w_ij_neighbor)**2 + (w_mn - w_mn_neighbor)**2)*0.5
-        
-    def shuffling_weight_to_correlated(self):
-        """
-        weight 셔플
+            w_ij, w_ij_neigh = self.edge_list_weight[e_ij], self.neighbor_weight_mean(e_ij)
+            w_mn, w_mn_neigh = self.edge_list_weight[e_mn], self.neighbor_weight_mean(e_mn)
+        return ((w_ij - w_ij_neigh)**2 + (w_mn - w_mn_neigh)**2)*0.5
     
-        """
-        link_ij, link_mn = self.edge[random.randint(0,self.G.number_of_edges()-1)], \
-                        self.edge[random.randint(0,self.G.number_of_edges()-1)]
-        original_state = self.link_weight_distance(link_ij, link_mn)
-        shuffle_state = self.link_weight_distance(link_ij, link_mn,shuffle=True)
+    def neighbor_weight_mean(self, edge):
+        neighbor_list = self.edge_neighbor[edge]
+        weight_list = []
+        for e in neighbor_list:
+            weight_list.append(self.edge_list_weight[e])
+        return np.mean(np.array(weight_list))
+    
+    def shuffle_weight(self):
+        link_ij, link_mn = self.Edges[random.randint(0,self.lattice.number_of_edges()-1)], \
+                        self.Edges[random.randint(0,self.lattice.number_of_edges()-1)]
+        original_state = self.case_shuffle_weight(link_ij, link_mn)
+        shuffle_state = self.case_shuffle_weight(link_ij, link_mn, shuffle = True)
         if original_state > shuffle_state:
-            self.G.edges[link_ij[0], link_ij[1]]['weight'], self.G.edges[link_mn[0], link_mn[1]]['weight']=\
-            self.G.edges[link_mn[0], link_mn[1]]['weight'], self.G.edges[link_ij[0], link_ij[1]]['weight']
-            self.edge = list(self.G.edges(data='weight'))
+            self.edge_list_weight[link_ij], self.edge_list_weight[link_mn] = self.edge_list_weight[link_mn], self.edge_list_weight[link_ij]
     
     def get_nn_pearson_correlation(self):
         """
         pearson correlation 확인
-        
+
         """
         weight_ij = []
         weight_neighbor = []
-        for e in self.edge:
-            w, w_neigh = self.get_neighbor_weight_mean(e)
+        for e in self.Edges:
+            w, w_neigh = self.edge_list_weight[e], self.neighbor_weight_mean(e)
             weight_ij.append(w)
             weight_neighbor.append(w_neigh)
         return stats.pearsonr(weight_ij, weight_neighbor)
-    
