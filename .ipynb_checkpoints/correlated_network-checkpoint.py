@@ -9,9 +9,9 @@ def cluster_distribution(network):
 class correlated_network:
     def __init__(self, size, Periodic=True):
         self.size = size
-        
+        self.Periodic = Periodic
         # lattice
-        self.lattice = nx.grid_2d_graph(self.size, self.size, periodic=Periodic)
+        self.lattice = nx.grid_2d_graph(self.size, self.size, periodic=self.Periodic)
         self.Nodes = list(self.lattice.nodes)
         self.pos={tuple(self.Nodes[i]):[self.Nodes[i][0],self.Nodes[i][1]]for i in range(len(self.Nodes))}
         self.Edges = list(self.lattice.edges())
@@ -99,3 +99,20 @@ class correlated_network:
             weight_ij.append(w)
             weight_neighbor.append(w_neigh)
         return stats.pearsonr(weight_ij, weight_neighbor)
+    
+    def assign_weight_network(self):
+        """
+        만들어둔 correlated weight를 네트워크에 입력
+        """
+        key = list(self.edge_list_weight.keys())
+        value = list(self.edge_list_weight.values())
+        for i in range(self.lattice.number_of_edges()):
+            self.lattice.edges[key[i]]['weight'] = value[i]
+    
+    def reconstruct_lattice_by_original_weight(self):
+        """
+        실행시 저장되어있던 네트워크 다시 생성(퍼콜레이션으로 부셔놓은 네트워크 복구)
+        """
+        self.lattice = nx.grid_2d_graph(self.size,self.size, periodic=self.Periodic)
+        for e in self.Edges:
+            self.lattice.edges[e[0], e[1]]['weight']=e[2]
