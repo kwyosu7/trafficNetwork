@@ -102,10 +102,19 @@ class correlated_network:
     
     def assign_weight_network(self):
         """
-        만들어둔 correlated weight를 네트워크에 입력, 링크가 없어져있다면 다시 생성
+        만들어둔 correlated weight를 네트워크에 입력
         """
         key = list(self.edge_list_weight.keys())
         value = list(self.edge_list_weight.values())
         for i in range(self.lattice.number_of_edges()):
             self.lattice.edges[key[i]]['weight'] = value[i]
     
+    def reconstruct_network(self):
+        """
+        만들어둔 correlated weight를 네트워크에 입력
+        """
+        self.lattice = nx.grid_2d_graph(self.size, self.size, periodic=self.Periodic)
+        key = list(self.edge_list_weight.keys())
+        value = list(self.edge_list_weight.values())
+        for i in range(self.lattice.number_of_edges()):
+            self.lattice.edges[key[i]]['weight'] = value[i]
