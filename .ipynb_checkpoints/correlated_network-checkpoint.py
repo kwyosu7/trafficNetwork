@@ -7,7 +7,7 @@ def cluster_distribution(network):
     return [len(c) for c in sorted(nx.connected_components(network), key=len, reverse=True)]
 
 class correlated_network:
-    def __init__(self, size, wegiht_list = None, Periodic=True):
+    def __init__(self, size, weight_list = None, Periodic=True):
         self.size = size
         self.Periodic = Periodic
         # lattice
