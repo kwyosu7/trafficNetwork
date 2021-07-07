@@ -7,7 +7,7 @@ def cluster_distribution(network):
     return [len(c) for c in sorted(nx.connected_components(network), key=len, reverse=True)]
 
 class correlated_network:
-    def __init__(self, size, Periodic=True):
+    def __init__(self, size, wegiht_list = None, Periodic=True):
         self.size = size
         self.Periodic = Periodic
         # lattice
@@ -15,8 +15,10 @@ class correlated_network:
         self.Nodes = list(self.lattice.nodes)
         self.pos={tuple(self.Nodes[i]):[self.Nodes[i][0],self.Nodes[i][1]]for i in range(len(self.Nodes))}
         self.Edges = list(self.lattice.edges())
-            
-        self.edge_list_weight = self.edge_list_weight_gen()
+        if weight_list = None:
+            self.edge_list_weight = self.edge_list_weight_gen()
+        else:
+            self.edge_list_weight = weight_list
         self.edge_neighbor = self.edge_neighbor_gen()
     
     def edge_align(self, edge_list):
