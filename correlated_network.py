@@ -15,7 +15,7 @@ class correlated_network:
         self.Nodes = list(self.lattice.nodes)
         self.pos={tuple(self.Nodes[i]):[self.Nodes[i][0],self.Nodes[i][1]]for i in range(len(self.Nodes))}
         self.Edges = list(self.lattice.edges())
-        if weight_list = None:
+        if weight_list == None:
             self.edge_list_weight = self.edge_list_weight_gen()
         else:
             self.edge_list_weight = weight_list
