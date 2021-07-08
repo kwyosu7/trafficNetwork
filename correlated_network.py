@@ -121,7 +121,7 @@ class correlated_network:
         for i in range(self.lattice.number_of_edges()):
             self.lattice.edges[key[i]]['weight'] = value[i]
     
-    def num_to_matrix(self, num, length):
+    def num_to_matrix(num, length):
         """
         연수 노드 -> nx 격자 노드 라벨
         """
